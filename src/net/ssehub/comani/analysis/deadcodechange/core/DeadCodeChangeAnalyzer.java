@@ -12,10 +12,17 @@
  */
 package net.ssehub.comani.analysis.deadcodechange.core;
 
+import java.util.HashMap;
 import java.util.Properties;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import net.ssehub.comani.analysis.AbstractCommitAnalyzer;
 import net.ssehub.comani.analysis.AnalysisSetupException;
+import net.ssehub.comani.analysis.deadcodechange.diff.AnalysisResult;
+import net.ssehub.comani.analysis.deadcodechange.diff.DiffAnalyzer;
+import net.ssehub.comani.core.Logger.MessageType;
+import net.ssehub.comani.data.Commit;
 import net.ssehub.comani.data.IAnalysisQueue;
 
 /**
@@ -25,6 +32,52 @@ import net.ssehub.comani.data.IAnalysisQueue;
  *
  */
 public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
+    
+    /**
+     * The identifier of this class, e.g., for printing messages.
+     */
+    private static final String ID = "DeadCodeChangeAnalyzer";
+
+    /**
+     * The string representation of the properties' key identifying the regular expression for identifying variability
+     * model files. The definition of this property is mandatory and has to define a valid Java regular expression.
+     */
+    private static final String PROPERTY_VM_FILES_REGEX = "analysis.variability_change_analyzer.vm_files_regex";
+    
+    /**
+     * The string representation of the properties' key identifying the regular expression for identifying code files.
+     * The definition of this property is mandatory and has to define a valid Java regular expression.
+     */
+    private static final String PROPERTY_CODE_FILES_REGEX = "analysis.variability_change_analyzer.code_files_regex";
+    
+    /**
+     * The string representation of the properties' key identifying the regular expression for identifying build files.
+     * The definition of this property is mandatory and has to define a valid Java regular expression.
+     */
+    private static final String PROPERTY_BUILD_FILES_REGEX = "analysis.variability_change_analyzer.build_files_regex";
+    
+    /**
+     * The string denoting the Java regular expression for identifying variability model files. This value is set by
+     * {@link #prepare()} based on the value of {@link #PROPERTY_VM_FILES_REGEX}.
+     */
+    private String vmFilesRegex;
+    
+    /**
+     * The string denoting the Java regular expression for identifying code files. This value is set by
+     * {@link #prepare()} based on the value of {@link #PROPERTY_CODE_FILES_REGEX}.
+     */
+    private String codeFilesRegex;
+    
+    /**
+     * The string denoting the Java regular expression for identifying build files. This value is set by
+     * {@link #prepare()} based on the value of {@link #PROPERTY_VM_FILES_REGEX}.
+     */
+    private String buildFilesRegex;
+    
+    /**
+     * The results of the analysis in terms of the commit id (key) and their specific {@link AnalysisResult}s (value).
+     */
+    private HashMap<String, AnalysisResult> analysisResults;
 
     /**
      * Create a new instance of this analyzer.
@@ -38,7 +91,52 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
     public DeadCodeChangeAnalyzer(Properties analysisProperties, IAnalysisQueue commitQueue)
             throws AnalysisSetupException {
         super(analysisProperties, commitQueue);
-        // TODO Auto-generated constructor stub
+        prepare(); // throws exceptions if something is missing or not as expected
+        logger.log(ID, this.getClass().getName() + " created", null, MessageType.DEBUG);
+    }
+    
+    /**
+     * Prepares the analysis in terms of checking and adapting to properties.
+     * 
+     * @throws AnalysisSetupException if preparing fails  
+     */
+    private void prepare() throws AnalysisSetupException {
+        // First: check the properties and adapt the analyzer accordingly
+        vmFilesRegex = analysisProperties.getProperty(PROPERTY_VM_FILES_REGEX);
+        checkRegex(PROPERTY_VM_FILES_REGEX, vmFilesRegex);
+        codeFilesRegex = analysisProperties.getProperty(PROPERTY_CODE_FILES_REGEX);
+        checkRegex(PROPERTY_CODE_FILES_REGEX, codeFilesRegex);
+        buildFilesRegex = analysisProperties.getProperty(PROPERTY_BUILD_FILES_REGEX);
+        checkRegex(PROPERTY_BUILD_FILES_REGEX, buildFilesRegex);
+        // Second: initialize result map
+        analysisResults = new HashMap<String, AnalysisResult>();
+    }
+    
+    /**
+     * Checks if the given regular expression (regex) for the given file identification property (regexProperty) is not
+     * empty or undefined and a valid Java regular expression.
+     * 
+     * @param regexProperty one of {@link #PROPERTY_VM_FILES_REGEX}, {@link #PROPERTY_CODE_FILES_REGEX}, or
+     *        {@link #PROPERTY_BUILD_FILES_REGEX}
+     * @param regex the Java regular expression as defined by the user for one of the above properties
+     * @throws AnalysisSetupException if the given expression is empty, undefined, or is not a valid Java regular
+     *         expression
+     */
+    private void checkRegex(String regexProperty, String regex) throws AnalysisSetupException {
+        String exceptionMessage = null;
+        if (regex != null && !regex.isEmpty()) {
+            try {                
+                Pattern.compile(regex);
+            } catch (PatternSyntaxException e) {
+                exceptionMessage = "Regular expression for \"" + regexProperty + "\" is invalid: " + e.getDescription();
+            }
+        } else {
+            exceptionMessage = "Missing Java regular expression for identifying files; please define \"" 
+                    + regexProperty + "\" in the configuration file";
+        }
+        if (exceptionMessage != null) {
+            throw new AnalysisSetupException(exceptionMessage);
+        }
     }
 
     /**
@@ -46,8 +144,25 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
      */
     @Override
     public boolean analyze() {
-        // TODO Auto-generated method stub
-        return false;
+        logger.log(ID, "Starting analysis", null, MessageType.DEBUG);
+        DiffAnalyzer diffAnalyzer = null;
+        boolean analysisSuccessful = false; // TODO: current check is incomplete
+        while (commitQueue.isOpen()) {
+            Commit commit = commitQueue.getCommit();
+            if (commit != null) {
+                logger.log(ID, "Analyzing commit " + commit.getId(), null, MessageType.DEBUG);
+                diffAnalyzer = new DiffAnalyzer(vmFilesRegex, codeFilesRegex, buildFilesRegex, commit);
+                if (diffAnalyzer.analyze()) {
+                    analysisResults.put(diffAnalyzer.getResult().getCommitId(), diffAnalyzer.getResult());
+                    analysisSuccessful = true;
+                    logger.log(ID, "Analysis of commit " + commit.getId() + " successfull", null, MessageType.INFO);
+                } else {
+                    
+                    logger.log(ID, "Commit " + commit.getId() + " not analyzed", null, MessageType.INFO);
+                }
+            }
+        }
+        return analysisSuccessful;
     }
 
     /**
@@ -55,8 +170,9 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
      */
     @Override
     public boolean operatingSystemSupported(String operatingSystem) {
-        // TODO Auto-generated method stub
-        return false;
+        // This analyzer is OS-independent
+        logger.log(ID, "Supported operating systems: all", null, MessageType.DEBUG);
+        return true;
     }
 
     /**
@@ -64,8 +180,8 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
      */
     @Override
     public boolean versionControlSystemSupported(String versionControlSystem) {
-        // TODO Auto-generated method stub
-        return false;
+        logger.log(ID, "Supported version control systems: Git and SVN", null, MessageType.DEBUG);
+        return versionControlSystem.equalsIgnoreCase("Git") || versionControlSystem.equalsIgnoreCase("SVN");
     }
 
 }
