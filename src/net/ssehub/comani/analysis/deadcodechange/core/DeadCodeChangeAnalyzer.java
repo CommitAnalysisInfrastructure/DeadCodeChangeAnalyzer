@@ -155,7 +155,7 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
                 if (diffAnalyzer.analyze()) {
                     analysisResults.put(diffAnalyzer.getResult().getCommitId(), diffAnalyzer.getResult());
                     analysisSuccessful = true;
-                    logger.log(ID, "Analysis of commit " + commit.getId() + " successfull", null, MessageType.INFO);
+                    logger.log(ID, "Analysis of commit " + commit.getId() + " successful", null, MessageType.INFO);
                 } else {
                     
                     logger.log(ID, "Commit " + commit.getId() + " not analyzed", null, MessageType.INFO);
@@ -163,6 +163,15 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
             }
         }
         return analysisSuccessful;
+    }
+    
+    /**
+     * Returns the analysis results.
+     * 
+     * @return the {@link #analysisResults}
+     */
+    public HashMap<String, AnalysisResult> getResults() {
+        return analysisResults;
     }
 
     /**
