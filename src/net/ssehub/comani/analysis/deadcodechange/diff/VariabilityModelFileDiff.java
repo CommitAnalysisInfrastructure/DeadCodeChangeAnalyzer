@@ -112,9 +112,6 @@ public class VariabilityModelFileDiff extends FileDiff {
          * comments that were part of this line are removed (only the part before
          * the comment is passed).
          */
-        
-        // TODO now modify the detection as needed
-        
         boolean isVariabilityChange = false;
         if (!isPartOfHelp(cleanDiffLine, cleanDiffLinePosition)) {
             if (Pattern.matches(MODEL_CONFIG_DEF_PATTERN, cleanDiffLine) 

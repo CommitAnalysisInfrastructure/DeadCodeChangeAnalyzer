@@ -115,9 +115,6 @@ public class BuildFileDiff extends FileDiff {
          * comments that were part of this line are removed. In case of a multi line
          * comment, the inner part if this comment needs additional checks here.
          */
-        
-        // TODO now modify the detection as needed
-        
         boolean isVariabilityChange = false;
         if (!isPartOfComment(cleanDiffLinePosition)
                 && (Pattern.matches(BUILD_VAR_PATTERN, cleanDiffLine) 
