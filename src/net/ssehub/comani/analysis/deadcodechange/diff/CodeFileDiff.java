@@ -144,7 +144,7 @@ public class CodeFileDiff extends FileDiff {
     
     /**
      * Definition of whether the diff analysis should consider all preprocessor blocks (<code>true</code>) or only those
-     * blocks with references to configuration options <code>false</code>.
+     * blocks with references to configuration options (<code>false</code>).
      */
     private boolean considerAllBlocks;
     
