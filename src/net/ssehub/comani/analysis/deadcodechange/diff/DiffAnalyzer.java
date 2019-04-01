@@ -89,18 +89,28 @@ public class DiffAnalyzer {
     private AnalysisResult analysisResult;
     
     /**
+     * Definition of whether the {@link CodeFileDiff} should consider all preprocessor blocks (<code>true</code>) or
+     * only those blocks with references to configuration options (<code>false</code>).
+     */
+    private boolean considerAllBlocks;
+    
+    /**
      * Construct a new {@link DiffAnalyzer}.
      * 
      * @param vmFilesRegex the regular expression identifying variability model files
      * @param codeFilesRegex the regular expression identifying code files
      * @param buildFilesRegex the regular expression identifying build files
      * @param commit the {@link Commit} containing diff information
+     * @param considerAllBlocks <code>true</code> if the {@link CodeFileDiff} should consider all preprocessor blocks or
+     *        <code>false</code> if it should only consider blocks with references to configuration options
      */
-    public DiffAnalyzer(String vmFilesRegex, String codeFilesRegex, String buildFilesRegex, Commit commit) {
+    public DiffAnalyzer(String vmFilesRegex, String codeFilesRegex, String buildFilesRegex, Commit commit,
+            boolean considerAllBlocks) {
         this.vmFilePattern = vmFilesRegex;
         this.codeFilePattern = codeFilesRegex;
         this.buildFilePattern = buildFilesRegex;
         this.commit = commit;
+        this.considerAllBlocks = considerAllBlocks;
     }
     
     /**
@@ -123,7 +133,7 @@ public class DiffAnalyzer {
                     if (Pattern.matches(codeFilePattern, changedArtifact.getArtifactPath())) {
                         // Diff affects source code file
                         String[] diffLines = changedArtifact.getContent().toArray(new String[0]);
-                        fileDiff = new CodeFileDiff(diffLines);
+                        fileDiff = new CodeFileDiff(diffLines, considerAllBlocks);
                         if (fileDiff.getResult()) {
                             analysisResult.addRelevantCodeChanges(changedArtifact.getArtifactPath());
                         }
