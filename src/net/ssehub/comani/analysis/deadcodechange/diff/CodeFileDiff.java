@@ -69,7 +69,7 @@ public class CodeFileDiff extends FileDiff {
      * 
      * Value: {@value #CODE_IFDEF_PATTERN};
      */
-    private static final String CODE_IFDEF_PATTERN = "#\\s*(ifdef|ifndef)";
+    private static final String CODE_IFDEF_PATTERN = "#\\s*(ifdef|ifndef).*";
     
     /**
      * Regex identifying lines that contain "#ifdef" or "#ifndef" statements in a code file and refer to a configuration
@@ -239,7 +239,7 @@ public class CodeFileDiff extends FileDiff {
         boolean isRelevantChange = false;
         if (!isPartOfComment(cleanDiffLinePosition)) {
             int startIndex = indexOfContinuationStart(cleanDiffLinePosition);
-            String startDiffLine = diffLines[startIndex];
+            String startDiffLine = normalize(diffLines[startIndex], startIndex);
             if (considerAllBlocks) {
                 // Consider all preprocessor blocks
                 isRelevantChange = isBlock(startDiffLine);
@@ -375,28 +375,17 @@ public class CodeFileDiff extends FileDiff {
             // Given diff line is #if*, #elif, or #else: search all following diff lines until the corresponding #endif
             int diffLineCounter = cleanDiffLinePosition + 1;
             while (!containsConfigBlocks && !counterpartFound && diffLineCounter < diffLines.length) {
-                diffLine = normalize(diffLines[diffLineCounter], diffLineCounter);
-                if (Pattern.matches(CODE_IFDEF_PATTERN, diffLine) || Pattern.matches(CODE_IF_PATTERN, diffLine)
-                        || Pattern.matches(CODE_ELSE_PATTERN, diffLine)) {
-                    nestedBlocksCounter++;
-                    // If the statement contains a reference to a configuration option, we are done
-                    containsConfigBlocks = Pattern.matches(CODE_VAR_PATTERN, diffLine);
-                } else if (Pattern.matches(CODE_END_IF_PATTERN, cleanDiffLine)) {
-                    if (nestedBlocksCounter == 0) {
-                        counterpartFound = true;
-                    } else {
-                        nestedBlocksCounter--;
-                    }
-                } else {
-                    // The line contains neither a closing nor an opening preprocessor statement...
-                    if (Pattern.matches(CODE_VAR_PATTERN, diffLine)) {
-                        // ...but a reference to a configuration option: check if this line is part of a continuation
-                        int indexOfContinuationStart = indexOfContinuationStart(diffLineCounter);
-                        if (indexOfContinuationStart != diffLineCounter 
-                                && (Pattern.matches(CODE_IFDEF_PATTERN, diffLines[indexOfContinuationStart])
-                                || Pattern.matches(CODE_IF_PATTERN, diffLines[indexOfContinuationStart])
-                                || Pattern.matches(CODE_ELSE_PATTERN, diffLines[indexOfContinuationStart]))) {
-                            containsConfigBlocks = true;
+                diffLine = normalize(diffLines[diffLineCounter], diffLineCounter).trim();
+                if (!diffLine.isEmpty()) {
+                    if (isConfigBlock(diffLine, diffLineCounter)) {
+                        containsConfigBlocks = true;
+                    } else if (isBlock(diffLine)) {
+                        nestedBlocksCounter++;
+                    } else if (Pattern.matches(CODE_END_IF_PATTERN, cleanDiffLine)) {
+                        if (nestedBlocksCounter == 0) {
+                            counterpartFound = true;
+                        } else {
+                            nestedBlocksCounter--;
                         }
                     }
                 }
