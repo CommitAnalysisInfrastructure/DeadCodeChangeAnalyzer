@@ -143,12 +143,6 @@ public class CodeFileDiff extends FileDiff {
     private static final String CODE_IF_END_PATTERN = ".*#\\s*(else|endif).*";
     
     /**
-     * Definition of whether the diff analysis should consider all preprocessor blocks (<code>true</code>) or only those
-     * blocks with references to configuration options (<code>false</code>).
-     */
-    private boolean considerAllBlocks;
-    
-    /**
      * Construct a new {@link CodeFileDiff}.<br><br>
      * 
      * This constructor will call the super constructor of {@link FileDiff}, which will start a line-wise analysis of
@@ -160,8 +154,7 @@ public class CodeFileDiff extends FileDiff {
      *        <code>false</code> if it should only consider blocks with references to configuration options
      */
     public CodeFileDiff(String[] diffLines, boolean considerAllBlocks) {
-        super(FileType.CODE, diffLines);
-        this.considerAllBlocks = considerAllBlocks;
+        super(FileType.CODE, diffLines, considerAllBlocks);
     }
     
     /**
