@@ -390,16 +390,16 @@ public class CodeFileDiff extends FileDiff {
             while (!containsConfigBlocks && !counterpartFound && diffLineCounter < diffLines.length) {
                 diffLine = normalize(diffLines[diffLineCounter], diffLineCounter).trim();
                 if (!diffLine.isEmpty()) {
-                    if (isConfigBlock(diffLine, diffLineCounter)) {
-                        containsConfigBlocks = true;
-                    } else if (isBlock(diffLine)) {
-                        nestedBlocksCounter++;
-                    } else if (Pattern.matches(CODE_END_IF_PATTERN, diffLine)) {
+                    if (Pattern.matches(CODE_END_IF_PATTERN, diffLine)) {
                         if (nestedBlocksCounter == 0) {
                             counterpartFound = true;
                         } else {
                             nestedBlocksCounter--;
                         }
+                    } else if (isConfigBlock(diffLine, diffLineCounter)) {
+                        containsConfigBlocks = true;
+                    } else if (isBlock(diffLine)) {
+                        nestedBlocksCounter++;
                     }
                 }
                 diffLineCounter++;
