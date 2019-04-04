@@ -19,7 +19,6 @@ package net.ssehub.comani.analysis.deadcodechange.diff;
  * <li>{@link VariabilityModelFileDiff}</li>
  * <li>{@link BuildFileDiff}</li>
  * <li>{@link CodeFileDiff}</li>
- * <li>{@link OtherFileDiff}</li>
  * </ul>
  * 
  * @author Christian Kroeher
@@ -72,7 +71,7 @@ public abstract class FileDiff {
      * Construct a new {@link FileDiff}.<br><br>
      * 
      * This constructor will start a line-wise analysis of the given diff lines calling the abstract method 
-     * {@link #isVariabilityChange(String, int)}. This method is implemented in the specific file diff classes to detect
+     * {@link #isRelevantChange(String, int)}. This method is implemented in the specific file diff classes to detect
      * changes to the variability information available in the specific type of file diff.
      * 
      * @param fileType the {@link FileType} of this file diff
@@ -88,7 +87,7 @@ public abstract class FileDiff {
      * Construct a new {@link FileDiff}.<br><br>
      * 
      * This constructor will start a line-wise analysis of the given diff lines calling the abstract method 
-     * {@link #isVariabilityChange(String, int)}. This method is implemented in the specific file diff classes to detect
+     * {@link #isRelevantChange(String, int)}. This method is implemented in the specific file diff classes to detect
      * changes to the variability information available in the specific type of file diff.<br><br>
      * 
      * This constructor is only used for {@link CodeFileDiff}s to set the {@link #considerAllBlocks} attribute before

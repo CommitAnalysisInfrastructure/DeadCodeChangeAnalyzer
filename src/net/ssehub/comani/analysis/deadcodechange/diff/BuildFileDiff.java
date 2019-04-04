@@ -69,7 +69,7 @@ public class BuildFileDiff extends FileDiff {
      * 
      * This constructor will call the super constructor of {@link FileDiff}, which will start a line-wise analysis of 
      * the given diff lines calling the inherited methods {@link #normalize(String, int)} and
-     * {@link #isVariabilityChange(String, int)} defined in this class.
+     * {@link #isRelevantChange(String, int)} defined in this class.
      * 
      * @param diffLines the lines of a build diff
      */
