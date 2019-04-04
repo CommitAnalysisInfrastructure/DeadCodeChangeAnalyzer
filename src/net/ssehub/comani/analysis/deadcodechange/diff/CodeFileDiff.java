@@ -14,6 +14,9 @@ package net.ssehub.comani.analysis.deadcodechange.diff;
 
 import java.util.regex.Pattern;
 
+import net.ssehub.comani.core.Logger;
+import net.ssehub.comani.core.Logger.MessageType;
+
 /**
  * This class implements analysis methods and required attributes for identifying relevant changes to code artifacts.
  * 
@@ -251,6 +254,9 @@ public class CodeFileDiff extends FileDiff {
             } else {
                 // Consider only those preprocessor blocks that reference a configuration option CONFIG_*
                 isRelevantChange = checkForConfigBlocks(startDiffLine, startIndex);
+            }
+            if (isRelevantChange) {
+                Logger.getInstance().log("CodeFileDiff", "Relevant change detected", cleanDiffLine, MessageType.DEBUG);
             }
         }
         return isRelevantChange;

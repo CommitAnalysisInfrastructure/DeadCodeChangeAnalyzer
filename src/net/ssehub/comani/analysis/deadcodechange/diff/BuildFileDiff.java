@@ -14,6 +14,9 @@ package net.ssehub.comani.analysis.deadcodechange.diff;
 
 import java.util.regex.Pattern;
 
+import net.ssehub.comani.core.Logger;
+import net.ssehub.comani.core.Logger.MessageType;
+
 /**
  * This class implements analysis methods and required attributes for identifying relevant changes to build artifacts.
  * 
@@ -121,6 +124,7 @@ public class BuildFileDiff extends FileDiff {
                         || (Pattern.matches(BUILD_CONDITION_BLOCK_END_PATTERN, cleanDiffLine)
                                 && backtrackCondition(cleanDiffLinePosition)))) {
             isVariabilityChange = true;
+            Logger.getInstance().log("BuildFileDiff", "Relevant change detected", cleanDiffLine, MessageType.DEBUG);
         }
         return isVariabilityChange;
     }

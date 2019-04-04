@@ -14,6 +14,9 @@ package net.ssehub.comani.analysis.deadcodechange.diff;
 
 import java.util.regex.Pattern;
 
+import net.ssehub.comani.core.Logger;
+import net.ssehub.comani.core.Logger.MessageType;
+
 /**
  * This class implements analysis methods and required attributes for identifying relevant changes to variability model
  * artifacts.
@@ -117,6 +120,8 @@ public class VariabilityModelFileDiff extends FileDiff {
             if (Pattern.matches(MODEL_CONFIG_DEF_PATTERN, cleanDiffLine) 
                     || Pattern.matches(MODEL_FILE_INCLUDE_PATTERN, cleanDiffLine)) {
                 isVariabilityChange = true;
+                Logger.getInstance().log("VariabilityModelFileDiff", "Relevant change detected", cleanDiffLine,
+                        MessageType.DEBUG);
             } else if (Pattern.matches(MODEL_DEPENDS_ON_PATTERN, cleanDiffLine)) {
                 /*
                  * "depends on"-statements can also be defined for comments.
@@ -142,6 +147,8 @@ public class VariabilityModelFileDiff extends FileDiff {
                          */
                         previousModelElementFound = true;
                         isVariabilityChange = true;
+                        Logger.getInstance().log("VariabilityModelFileDiff", "Relevant change detected", cleanDiffLine,
+                                MessageType.DEBUG);
                     }
                     diffLineCounter--;
                 }
