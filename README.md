@@ -1,5 +1,5 @@
 # DeadCodeChangeAnalyzer
-This [ComAnI](https://github.com/CommitAnalysisInfrastructure/ComAnI) plug-in realizes an analyzer for identifying changes to code, build, and variability model artifacts in KBuild-based Software Product Lines, like [Linux kernel](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git) or the [Coreboot firmware](https://www.coreboot.org/downloads.html), which affect the results of the dead code analysis [1]. It therefore adapts the algorithms of the [VariabilityChangeAnalyzer]( https://github.com/CommitAnalysisInfrastructure/VariabilityChangeAnalyzer) to consider changes that affect the variability information in build and variability model artifacts as well as all code blocks or only those that reference a configuration option (see plug-in-specific configuration parameter below).
+This [ComAnI](https://github.com/CommitAnalysisInfrastructure/ComAnI) plug-in realizes an analyzer for identifying changes to code, build, and variability model artifacts in KBuild-based Software Product Lines, like [Linux kernel](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git) or the [Coreboot firmware](https://www.coreboot.org/downloads.html), which affect the results of the dead code analysis [1]. It therefore adapts the algorithms of the [VariabilityChangeAnalyzer]( https://github.com/CommitAnalysisInfrastructure/VariabilityChangeAnalyzer) to consider changes that affect the variability information in build and variability model artifacts as well as code blocks.
 
 *Main class name:* `net.ssehub.comani.analysis.deadcodechange.core.DeadCodeChangeAnalyzer`
 
@@ -44,14 +44,6 @@ Related parameters: none
 analysis.variability_change_analyzer.build_files_regex = <Java-Regex>
 ```
 Example: `analysis.variability_change_analyzer.build_files_regex = .*/(Makefile|Kbuild)((\\.|\\-|\\_|\\+|\\~).*)?`
-
-The extent to which the analysis should consider code blocks. Either all code blocks (`true`) or only those, which explicitly reference a configuration option defined in the variability model as part of their presence condition (`false`). This parameter is optional. If it is not defined, the default value `true` (consider all blocks) is used.
-```Properties
-Type: optional
-Default value: true
-Related parameters: none
-analysis.dead_code_change_analyzer.consider_all_blocks = <true|false>
-```
 
 ## License
 This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html).
