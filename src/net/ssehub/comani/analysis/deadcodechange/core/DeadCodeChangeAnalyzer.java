@@ -57,14 +57,6 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
     private static final String PROPERTY_BUILD_FILES_REGEX = "analysis.dead_code_change_analyzer.build_files_regex";
     
     /**
-     * The string representation of the properties' key identifying the definition of whether the code change analysis
-     * algorithms should consider all preprocessor blocks (<code>true</code>) or only those blocks with references to
-     * configuration options define in the variability model (<code>false</code>). The definition of this property is
-     * optional. The default value is <code>true</code>.
-     */
-    private static final String PROPERTY_BLOCK_CONSIDERATION = "analysis.dead_code_change_analyzer.consider_all_blocks";
-    
-    /**
      * The string denoting the Java regular expression for identifying variability model files. This value is set by
      * {@link #prepare()} based on the value of {@link #PROPERTY_VM_FILES_REGEX}.
      */
@@ -81,13 +73,6 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
      * {@link #prepare()} based on the value of {@link #PROPERTY_VM_FILES_REGEX}.
      */
     private String buildFilesRegex;
-    
-    /**
-     * Definition of whether the code change analysis algorithms should consider all preprocessor blocks
-     * (<code>true</code>) or only those blocks with references to configuration options (<code>false</code>). This
-     * value is set by {@link #prepare()} based on the value of {@link #PROPERTY_BLOCK_CONSIDERATION}.
-     */
-    private boolean considerAllBlocks;
     
     /**
      * The results of the analysis in terms of the commit id (key) and their specific {@link AnalysisResult}s (value).
@@ -123,12 +108,6 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
         checkRegex(PROPERTY_CODE_FILES_REGEX, codeFilesRegex);
         buildFilesRegex = analysisProperties.getProperty(PROPERTY_BUILD_FILES_REGEX);
         checkRegex(PROPERTY_BUILD_FILES_REGEX, buildFilesRegex);
-        String considerAllBlocksString = analysisProperties.getProperty(PROPERTY_BLOCK_CONSIDERATION);
-        if (considerAllBlocksString == null) {
-            considerAllBlocks = true; // Default value is true (consider all blocks)
-        } else {
-            considerAllBlocks = Boolean.parseBoolean(considerAllBlocksString);
-        }
         // Second: initialize result map
         analysisResults = new HashMap<String, AnalysisResult>();
     }
@@ -172,8 +151,7 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
             Commit commit = commitQueue.getCommit();
             if (commit != null) {
                 logger.log(ID, "Analyzing commit " + commit.getId(), null, MessageType.DEBUG);
-                diffAnalyzer = new DiffAnalyzer(vmFilesRegex, codeFilesRegex, buildFilesRegex, commit,
-                        considerAllBlocks);
+                diffAnalyzer = new DiffAnalyzer(vmFilesRegex, codeFilesRegex, buildFilesRegex, commit);
                 if (diffAnalyzer.analyze()) {
                     analysisResults.put(diffAnalyzer.getResult().getCommitId(), diffAnalyzer.getResult());
                     analysisSuccessful = true;

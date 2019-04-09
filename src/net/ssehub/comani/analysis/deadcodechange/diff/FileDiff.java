@@ -56,12 +56,6 @@ public abstract class FileDiff {
     protected String[] diffLines;
     
     /**
-     * Definition of whether the {@link CodeFileDiff} should consider all preprocessor blocks (<code>true</code>) or
-     * only those blocks with references to configuration options (<code>false</code>).
-     */
-    protected boolean considerAllBlocks;
-    
-    /**
      * The result of the analysis in terms of whether the given commit changes relevant information (<code>true</code>)
      * or not (<code>false</code>).
      */
@@ -70,9 +64,10 @@ public abstract class FileDiff {
     /**
      * Construct a new {@link FileDiff}.<br><br>
      * 
-     * This constructor will start a line-wise analysis of the given diff lines calling the abstract method 
-     * {@link #isRelevantChange(String, int)}. This method is implemented in the specific file diff classes to detect
-     * changes to the variability information available in the specific type of file diff.
+     * This constructor will start a line-wise analysis of the given diff lines calling the abstract methods
+     * {@link #normalize(String, int)} and {@link #isRelevantChange(String, int)}. These methods are implemented in the
+     * specific file diff classes to detect changes to the variability information available in the specific type of
+     * file diff.
      * 
      * @param fileType the {@link FileType} of this file diff
      * @param diffLines the full, line-wise diff description of a commit
@@ -80,28 +75,6 @@ public abstract class FileDiff {
     protected FileDiff(FileType fileType, String[] diffLines) {
         this.fileType = fileType;
         this.diffLines = diffLines;
-        analyzeDiff();
-    }
-    
-    /**
-     * Construct a new {@link FileDiff}.<br><br>
-     * 
-     * This constructor will start a line-wise analysis of the given diff lines calling the abstract method 
-     * {@link #isRelevantChange(String, int)}. This method is implemented in the specific file diff classes to detect
-     * changes to the variability information available in the specific type of file diff.<br><br>
-     * 
-     * This constructor is only used for {@link CodeFileDiff}s to set the {@link #considerAllBlocks} attribute before
-     * the analysis is startet.
-     * 
-     * @param fileType the {@link FileType} of this file diff
-     * @param diffLines the full, line-wise diff description of a commit
-     * @param considerAllBlocks <code>true</code> if the diff analysis should consider all preprocessor blocks or
-     *        <code>false</code> if it should only consider blocks with references to configuration options
-     */
-    protected FileDiff(FileType fileType, String[] diffLines, boolean considerAllBlocks) {
-        this.fileType = fileType;
-        this.diffLines = diffLines;
-        this.considerAllBlocks = considerAllBlocks;
         analyzeDiff();
     }
     
@@ -141,10 +114,10 @@ public abstract class FileDiff {
     protected abstract String normalize(String diffLine, int diffLinePosition);
     
     /**
-     * Check if the given diff line (without leading "+" or "-") describes a change to variability information, which
-     * forces another dead code analysis.
+     * Check if the given diff line (without leading "+" or "-") describes a relevant change, which forces another dead
+     * code analysis.
      *  
-     * @param cleanDiffLine the line of a diff description to be checked for variability information without leading "+"
+     * @param cleanDiffLine the line of a diff description to be checked for relevant change without leading "+"
      *        or "-"
      * @param cleanDiffLinePosition the index of the given diff line in {@link #diffLines} used, e.g., for backtracking 
      * @return <code>true</code> if the given diff line contains variability information, <code>false</code> otherwise

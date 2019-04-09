@@ -25,11 +25,6 @@ import net.ssehub.comani.core.Logger.MessageType;
  */
 public class CodeFileDiff extends FileDiff {
     
-    /*
-     * TODO we need to think about how to handle changed lines during tracking change impacts, e.g., do we need to 
-     * consider deleted lines, if we check for something that is added?
-     */
-    
     /**
      * String identifying the start of a single line comment in a code file.<br><br>
      * 
@@ -45,18 +40,18 @@ public class CodeFileDiff extends FileDiff {
     private static final String CODE_ML_COMMENT_START_MARKER = "/*";
     
     /**
-     * Regex identifying the start of a multi line comment in a code file.<br><br>
-     * 
-     * Value: {@value #CODE_ML_COMMENT_START_PATTERN};
-     */
-    private static final String CODE_ML_COMMENT_START_PATTERN = "/\\*";
-    
-    /**
      * String identifying the end of a multi line comment in a code file.<br><br>
      * 
      * Value: {@value #CODE_ML_COMMENT_END_MARKER};
      */
     private static final String CODE_ML_COMMENT_END_MARKER = "*/";
+    
+    /**
+     * Regex identifying the start of a multi line comment in a code file.<br><br>
+     * 
+     * Value: {@value #CODE_ML_COMMENT_START_PATTERN};
+     */
+    private static final String CODE_ML_COMMENT_START_PATTERN = "/\\*";
     
     /**
      * Regex identifying the end of a multi line comment in a code file.<br><br>
@@ -66,89 +61,37 @@ public class CodeFileDiff extends FileDiff {
     private static final String CODE_ML_COMMENT_END_PATTERN = "\\*/";
     
     /**
-     * Regex identifying lines that contain a reference to a configuration option "CONFIG_" in a code file.<br><br>
+     * Regex identifying the start of a C-preprocessor condition. This pattern summarizes the following variants:
+     * <ul>
+     * <li><code>#if ...</code></li>
+     * <li><code>#ifdef ...</code></li>
+     * <li><code>#ifndef ...</code></li>
+     * </ul>
      * 
-     * Value: {@value #CODE_VAR_PATTERN};
+     * Value: {@value #CPP_IF_PATTERN};
      */
-    private static final String CODE_VAR_PATTERN = ".*(\\s+|\\(|\\[|\\{|\\<|\\)|\\]|\\}|\\>)\\!?CONFIG_.*";
+    private static final Pattern CPP_IF_PATTERN = Pattern.compile(".*#\\s*if.*");
     
     /**
-     * Regex identifying a preprocessor "ifdef"-block.<br><br>
+     * Regex identifying the start of a C-preprocessor alternative for a related condition.<br><br>
      * 
-     * Value: {@value #CODE_IFDEF_PATTERN};
+     * Value: {@value #CPP_ELSE_PATTERN};
      */
-    private static final String CODE_IFDEF_PATTERN = "#\\s*(ifdef|ifndef).*";
+    private static final Pattern CPP_ELSE_PATTERN = Pattern.compile(".*#\\s*else.*");
     
     /**
-     * Regex identifying lines that contain "#ifdef" or "#ifndef" statements in a code file and refer to a configuration
-     * option.<br><br>
+     * Regex identifying the start of a C-preprocessor conditional alternative for a related condition.<br><br>
      * 
-     * Value: {@value #CODE_VAR_IFDEF_PATTERN};
+     * Value: {@value #CPP_ELIF_PATTERN};
      */
-    private static final String CODE_VAR_IFDEF_PATTERN = CODE_IFDEF_PATTERN + CODE_VAR_PATTERN;
+    private static final Pattern CPP_ELIF_PATTERN = Pattern.compile(".*#\\s*elif.*");
     
     /**
-     * Regex identifying lines that contain help methods (macros) in a code file.<br><br>
+     * Regex identifying the end of a C-preprocessor condition.<br><br>
      * 
-     * Value: {@value #CODE_VAR_HELP_METHODS_PATTERN};
+     * Value: {@value #CPP_ENDIF_PATTERN};
      */
-    private static final String CODE_VAR_HELP_METHODS_PATTERN = "\\!?(defined|IS_BUILTIN|"
-            + "IS_MODULE|IS_REACHABLE|IS_ENABLED)\\(";
-    
-    /**
-     * Regex identifying lines that contain conditions with help methods (macros) in a code file and refer to a
-     * configuration option.<br><br>
-     * 
-     * Value: {@value #CODE_VAR_IF_CONDITION_PATTERN};
-     */
-    private static final String CODE_VAR_IF_CONDITION_PATTERN = "\\!?.*(" + CODE_VAR_HELP_METHODS_PATTERN + ")?"
-            + CODE_VAR_PATTERN;
-    
-    /**
-     * Regex identifying a preprocessor "if"- or "elif"-block.<br><br>
-     * 
-     * Value: {@value #CODE_IF_PATTERN};
-     */
-    private static final String CODE_IF_PATTERN = "#\\s*(if|elif).*";
-    
-    /**
-     * Regex identifying lines that contain "#if" or "#elif" statements in a code file and refer to help methods
-     * (macros), which in turn refer to a configuration option.<br><br>
-     * 
-     * Value: {@value #CODE_VAR_IF_PATTERN};
-     */
-    private static final String CODE_VAR_IF_PATTERN = CODE_IF_PATTERN + CODE_VAR_IF_CONDITION_PATTERN;
-    
-    /**
-     * Regex identifying lines that contain variability information in a code file and indicate the start of a
-     * conditional block.<br><br>
-     * 
-     * Value: {@value #CODE_VAR_IF_START_PATTERN};
-     */
-    private static final String CODE_VAR_IF_START_PATTERN = ".*((" + CODE_VAR_IFDEF_PATTERN + ")"
-            + "|(" + CODE_VAR_IF_PATTERN + "))";
-    
-    /**
-     * Regex identifying a preprocessor "endif".<br><br>
-     * 
-     * Value: {@value #CODE_END_IF_PATTERN};
-     */
-    private static final String CODE_END_IF_PATTERN = ".*#\\s*endif.*";
-    
-    /**
-     * Regex identifying a preprocessor "else".<br><br>
-     * 
-     * Value: {@value #CODE_ELSE_PATTERN};
-     */
-    private static final String CODE_ELSE_PATTERN = ".*#\\s*else.*";
-    
-    /**
-     * Regex identifying lines that indicate the end of a conditional block in a code file. If these lines can be
-     * interpreted as variability related depends on the corresponding start of the block (the condition).<br><br>
-     * 
-     * Value: {@value #CODE_IF_END_PATTERN};
-     */
-    private static final String CODE_IF_END_PATTERN = ".*#\\s*(else|endif).*";
+    private static final Pattern CPP_ENDIF_PATTERN = Pattern.compile(".*#\\s*endif.*");
     
     /**
      * Construct a new {@link CodeFileDiff}.<br><br>
@@ -158,11 +101,9 @@ public class CodeFileDiff extends FileDiff {
      * {@link #isRelevantChange(String, int)} defined in this class.
      * 
      * @param diffLines the lines of a source code diff
-     * @param considerAllBlocks <code>true</code> if the diff analysis should consider all preprocessor blocks or
-     *        <code>false</code> if it should only consider blocks with references to configuration options
      */
-    public CodeFileDiff(String[] diffLines, boolean considerAllBlocks) {
-        super(FileType.CODE, diffLines, considerAllBlocks);
+    public CodeFileDiff(String[] diffLines) {
+        super(FileType.CODE, diffLines);
     }
     
     /**
@@ -170,14 +111,8 @@ public class CodeFileDiff extends FileDiff {
      */
     @Override
     protected String normalize(String diffLine, int diffLinePosition) {
-        // 1. Remove "+" or "-"
+        // 1. Remove "+" or "-", if they exist
         String normalizedDiffLine = diffLine;
-        /*
-         * This method is also used by backtrackCondition-method and
-         * may receive unchanged diff lines (no leading "+" or "-") from
-         * there. Thus, check before removing the first character although
-         * this is not needed if called from parent-class. 
-         */
         if (diffLine.startsWith(LINE_ADDED_MARKER) || diffLine.startsWith(LINE_DELETED_MARKER)) {
             normalizedDiffLine = diffLine.substring(1, diffLine.length());
         }
@@ -239,23 +174,14 @@ public class CodeFileDiff extends FileDiff {
     @Override
     protected boolean isRelevantChange(String cleanDiffLine, int cleanDiffLinePosition) {
         /*
-         * Clean diff line means, that there is no leading "+" or "-" anymore and
-         * comments that were part of this line are removed. In case of a multi line
-         * comment, the inner part if this comment needs additional checks here.
+         * Clean diff line means, that there is no leading "+" or "-" anymore and comments that were part of this line
+         * are removed. In case of a multi line comment, the inner part if this comment needs additional checks here.
          * See isPartOfComment-method.
          */
         boolean isRelevantChange = false;
         if (!isPartOfComment(cleanDiffLinePosition)) {
-            int startIndex = indexOfContinuationStart(cleanDiffLinePosition);
-            String startDiffLine = normalize(diffLines[startIndex], startIndex);
-            if (considerAllBlocks) {
-                // Consider all preprocessor blocks
-                isRelevantChange = isBlock(startDiffLine);
-            } else {
-                // Consider only those preprocessor blocks that reference a configuration option CONFIG_*
-                isRelevantChange = checkForConfigBlocks(startDiffLine, startIndex);
-            }
-            if (isRelevantChange) {
+            if (isBlockRelatedChange(cleanDiffLine, cleanDiffLinePosition)) {
+                isRelevantChange = true;
                 Logger.getInstance().log("CodeFileDiff", "Relevant change detected", cleanDiffLine, MessageType.DEBUG);
             }
         }
@@ -263,195 +189,86 @@ public class CodeFileDiff extends FileDiff {
     }
     
     /**
-     * Checks the line before the given position for continuation and, if this is found, determines the index of the 
-     * start of the statement the continuation belongs to. This is the first line with a continuation.
-     *  
-     * @param cleanDiffLinePosition the index of a particular diff line
-     * @return either the given index above, if no continuation was found, or the index of the line containing the start
-     *         of the statement the continuation belongs to
+     * Checks whether the given diff line indicates a block-related change. This is the case, if it:
+     * <ul>
+     * <li>contains a block statement:
+     *     <ul>
+     *     <li><code>#if*</code></li>
+     *     <li><code>#else</code></li>
+     *     <li><code>#elif</code></li>
+     *     <li>or <code>#endif</code></li>
+     *     </ul>
+     * </li>
+     * <li>is a continuation of a <code>#if*</code> or <code>#elif</code> condition</li>
+     * </ul> 
+     * @param cleanDiffLine the <i>normalized</i> diff line to check
+     * @param cleanDiffLinePosition the position of the diff line in the set of all diff lines
+     * @return <code>true</code> if the diff line indicates a block-related change; <code>false</code> otherwise
      */
-    private int indexOfContinuationStart(int cleanDiffLinePosition) {
-        int startIndex = cleanDiffLinePosition;
-        int diffLineCounter = cleanDiffLinePosition - 1;
-        while (diffLineCounter >= 0 && diffLines[diffLineCounter].trim().endsWith("\\")) {
-            startIndex = diffLineCounter;
+    private boolean isBlockRelatedChange(String cleanDiffLine, int cleanDiffLinePosition) {
+        boolean isBlockRelatedChange = false;
+        if (containsBlockStatement(cleanDiffLine) || isBlockConditionContinuation(cleanDiffLinePosition)) {
+            isBlockRelatedChange = true;
+        }
+        return isBlockRelatedChange;
+    }
+    
+    /**
+     * Checks whether the given diff line contains a block statement. This is the case, if it matches one of the
+     * following patterns:
+     * <ul>
+     * <li>{@link #CPP_IF_PATTERN}</li>
+     * <li>{@link #CPP_ELIF_PATTERN}</li>
+     * <li>{@link #CPP_ELSE_PATTERN}</li>
+     * <li>{@link #CPP_ENDIF_PATTERN}</li>
+     * </ul>
+     * @param cleanDiffLine the <i>normalized</i> diff line to check
+     * @return <code>true</code> if the diff line matches one of the patterns above; <code>false</code> otherwise
+     */
+    private boolean containsBlockStatement(String cleanDiffLine) {
+        boolean containsBlockStatement = false;
+        if (CPP_IF_PATTERN.matcher(cleanDiffLine).matches()
+                || CPP_ELIF_PATTERN.matcher(cleanDiffLine).matches()
+                || CPP_ELSE_PATTERN.matcher(cleanDiffLine).matches()
+                || CPP_ENDIF_PATTERN.matcher(cleanDiffLine).matches()) {
+            containsBlockStatement = true;
+        }
+        return containsBlockStatement;
+    }
+    
+    /**
+     * Checks whether the diff line indicated by the given diff line position in the set of all diff lines is a
+     * continuation of a blocks condition (condition definition over multiple lines using "<code>\</code>").
+     * 
+     * @param diffLinePosition the position of a diff line in the set of all diff lines to check
+     * @return <code>true</code> if the diff line indicated by the given diff line position is a continuation;
+     *         <code>false</code> otherwise
+     */
+    private boolean isBlockConditionContinuation(int diffLinePosition) {
+        boolean isBlockConditionContinuation = false;
+        boolean continuationFound = true;
+        int diffLineCounter = diffLinePosition - 1;
+        String normalizedDiffLine;
+        while (!isBlockConditionContinuation && continuationFound && diffLineCounter >= 0) {
+            normalizedDiffLine = normalize(diffLines[diffLineCounter], diffLineCounter).trim(); 
+            if (!normalizedDiffLine.endsWith("\\")) {
+                continuationFound = false;
+            } else {
+                if (containsBlockStatement(normalizedDiffLine)) {
+                    isBlockConditionContinuation = true;
+                }
+            }
             diffLineCounter--;
         }
-        return startIndex;
+        return isBlockConditionContinuation;
     }
     
     /**
-     * Checks the given line for containing preprocessor statements defining a code block. This is the case, if the line
-     * matches one of the following patterns:
-     * <ul>
-     * <li>{@link #CODE_IFDEF_PATTERN}</li>
-     * <li>{@link #CODE_IF_PATTERN}</li>
-     * <li>{@link #CODE_IF_END_PATTERN}</li>
-     * </ul>
-     * @param cleanDiffLine the diff line to check
-     * @return <code>true</code> if the given line matches one of the patterns above; <code>false</code> otherwise
-     */
-    private boolean isBlock(String cleanDiffLine) {
-        boolean isRelevantChange = false;
-        /*
-         * Simply check, if line contains block information: if it does, return true without further checks.
-         * No backtracking, etc. necessary here as we check for all blocks.
-         */
-        if (Pattern.matches(CODE_IFDEF_PATTERN, cleanDiffLine) 
-                || Pattern.matches(CODE_IF_PATTERN, cleanDiffLine) 
-                || Pattern.matches(CODE_IF_END_PATTERN, cleanDiffLine)) {
-            isRelevantChange = true;
-        }
-        return isRelevantChange;
-    }
-    
-    /**
-     * Checks the given line for containing preprocessor statements defining a code block, which references a 
-     * configuration option in its condition or contains nested blocks with such references.
+     * Checks whether the diff line at the given diff line position is part of a multi line comment.
      * 
-     * @param cleanDiffLine the diff line to check
-     * @param cleanDiffLinePosition the index of the given diff line in the set of all diff lines
-     * @return <code>true</code> if the given line contains preprocessor statements defining a code block, which
-     *         references a configuration option in its condition or contains nested blocks with such references;
-     *         <code>true</code> otherwise
-     */
-    private boolean checkForConfigBlocks(String cleanDiffLine, int cleanDiffLinePosition) {
-        boolean isRelevantChange = false;
-        if (isConfigBlock(cleanDiffLine, cleanDiffLinePosition)) {
-            // A block referencing a configuration option (CONFIG_*) is changed directly
-            isRelevantChange = true;
-        } else if (isBlock(cleanDiffLine)) {
-            /*
-             * A general block is changed: check if it contains other blocks referencing a configuration option
-             * (CONFIG_*), which are affected by that change indirectly.
-             * 
-             * For that, simply search for CONFIG_* and, if found, check if it is part of an #if* or #elif condition
-             */
-            isRelevantChange = containsConfigBlocks(cleanDiffLinePosition,
-                    Pattern.matches(CODE_END_IF_PATTERN, cleanDiffLine));
-        }
-        return isRelevantChange;
-    }
-    
-    /**
-     * Checks the lines between the given diff line and its counter part (either opening or closing preprocessor block
-     * statement) for other blocks referencing a configuration option.
-     * 
-     * @param cleanDiffLinePosition the index of the diff line in the set of all diff lines, which started this check
-     * @param backwardSearch <code>true</code> if the given diff line contains a closing statement and this method must
-     *        search in all previous lines, or <code>false</code> if the given diff line contains a opening statement
-     *        such that this method must search all following lines
-     * @return <code>true</code> if the block represented by the given line contains nested blocks referencing a
-     *         configuration option; <code>true</code> otherwise
-     */
-    private boolean containsConfigBlocks(int cleanDiffLinePosition, boolean backwardSearch) {
-        boolean containsConfigBlocks = false;
-        boolean counterpartFound = false;
-        int nestedBlocksCounter = 0;
-        String diffLine;
-        if (backwardSearch) {
-            // Given diff line is #endif: search all previous diff lines until the corresponding #if*, #elif, or #else
-            int diffLineCounter = cleanDiffLinePosition - 1;
-            while (!containsConfigBlocks && !counterpartFound && diffLineCounter >= 0) {
-                diffLine = normalize(diffLines[diffLineCounter], diffLineCounter).trim();
-                if (!diffLine.isEmpty()) {                    
-                    if (Pattern.matches(CODE_END_IF_PATTERN, diffLine)) {
-                        nestedBlocksCounter++;
-                    } else if (Pattern.matches(CODE_IFDEF_PATTERN, diffLine) 
-                            || Pattern.matches(CODE_IF_PATTERN, diffLine)
-                            || Pattern.matches(CODE_ELSE_PATTERN, diffLine)) {
-                        // If the statement contains a reference to a configuration option, we are done
-                        containsConfigBlocks = Pattern.matches(CODE_VAR_PATTERN, diffLine);
-                        if (nestedBlocksCounter == 0) {
-                            counterpartFound = true;
-                        } else {
-                            nestedBlocksCounter--;
-                        }
-                    } else {
-                        // The line contains neither a closing nor an opening preprocessor statement...
-                        if (Pattern.matches(CODE_VAR_PATTERN, diffLine)) {
-                            // ..but a reference to a configuration option: check if this line is part of a continuation
-                            int indexOfContinuationStart = indexOfContinuationStart(diffLineCounter);
-                            if (indexOfContinuationStart != diffLineCounter 
-                                    && (Pattern.matches(CODE_IFDEF_PATTERN, diffLines[indexOfContinuationStart])
-                                            || Pattern.matches(CODE_IF_PATTERN, diffLines[indexOfContinuationStart])
-                                            || Pattern.matches(CODE_ELSE_PATTERN,
-                                                    diffLines[indexOfContinuationStart]))) {
-                                containsConfigBlocks = true;
-                            }
-                        }
-                    }
-                }
-                diffLineCounter--;
-            }
-        } else {
-            // Given diff line is #if*, #elif, or #else: search all following diff lines until the corresponding #endif
-            int diffLineCounter = cleanDiffLinePosition + 1;
-            while (!containsConfigBlocks && !counterpartFound && diffLineCounter < diffLines.length) {
-                diffLine = normalize(diffLines[diffLineCounter], diffLineCounter).trim();
-                if (!diffLine.isEmpty()) {
-                    if (Pattern.matches(CODE_END_IF_PATTERN, diffLine)) {
-                        if (nestedBlocksCounter == 0) {
-                            counterpartFound = true;
-                        } else {
-                            nestedBlocksCounter--;
-                        }
-                    } else if (isConfigBlock(diffLine, diffLineCounter)) {
-                        containsConfigBlocks = true;
-                    } else if (isBlock(diffLine)) {
-                        nestedBlocksCounter++;
-                    }
-                }
-                diffLineCounter++;
-            }
-        }
-        return containsConfigBlocks;
-    }
-    
-    /**
-     * Checks the given line for containing preprocessor statements, which define a block referencing a configuration
-     * option in its condition.
-     * 
-     * @param cleanDiffLine cleanDiffLine the diff line to check
-     * @param cleanDiffLinePosition the index of the given diff line in the set of all diff lines
-     * @return <code>true</code> if the block represented by the given line references a configuration option in its
-     *         condition; <code>true</code> otherwise
-     */
-    private boolean isConfigBlock(String cleanDiffLine, int cleanDiffLinePosition) {
-        boolean isConfigBlock = false;
-        if (Pattern.matches(CODE_VAR_IFDEF_PATTERN, cleanDiffLine) 
-                || Pattern.matches(CODE_VAR_IF_PATTERN, cleanDiffLine)) {
-            // Found #if* with reference to configuration option in the same line
-            isConfigBlock = true;
-        } else if (cleanDiffLine.trim().endsWith("\\")) {
-            // No reference to configuration options found, but continuation detected: check all continuing lines
-            boolean isContinuing = true;
-            int diffLineCounter = cleanDiffLinePosition + 1;
-            String continuingLine;
-            while (!isConfigBlock && isContinuing && diffLineCounter < diffLines.length) {
-                continuingLine = normalize(diffLines[diffLineCounter], diffLineCounter);
-                if (Pattern.matches(CODE_VAR_PATTERN, continuingLine)) {
-                    isConfigBlock = true;
-                } else if (!continuingLine.trim().endsWith("\\")) {
-                    isContinuing = false;
-                }
-                diffLineCounter++;
-            }
-        } else if (Pattern.matches(CODE_IF_END_PATTERN, cleanDiffLine)
-                && backtrackPreprocessorCondition(cleanDiffLinePosition)) {
-            // Found #else or #endif and the related condition references a configuration option
-            isConfigBlock = true;
-        }
-        return isConfigBlock;
-    }
-    
-    /**
-     * Check if the diff line at the given position is part of a multi line comment.
-     * 
-     * @param diffLinePosition the index of the diff line which should be checked for being
-     * part of a multi line comment
-     * @return <code>true</code> if the diff line at the given index is part of a multi line
-     * comment, <code>false</code> otherwise
+     * @param diffLinePosition the position of a diff line in the set of all diff lines to check
+     * @return <code>true</code> if the diff line at the given index is part of a multi line comment; <code>false</code>
+     *         otherwise
      */
     private boolean isPartOfComment(int diffLinePosition) {
         boolean isPartOfComment = false;
@@ -477,90 +294,6 @@ public class CodeFileDiff extends FileDiff {
             diffLineCounter--;
         }
         return isPartOfComment;
-    }
-    
-    /**
-     * Find the condition for the "#endif" or "#else" statement at the given index of the diff
-     * lines and return <code>true</code> if this condition is variability related, which should
-     * lead to an increment of the respective variability lines counter (added or deleted).
-     *  
-     * @param blockEndIndex the index of the diff line where the "#endif" or "#else" statement was found
-     * @return <code>true</code> if the found condition is variability related, <code>false</code> otherwise
-     */
-    private boolean backtrackPreprocessorCondition(int blockEndIndex) {
-        /*
-         * Determine the change type of the block end ('+' or '-') and the inverted type for checking
-         * whether possible previous block end statements are part of a nested block or if the given block end
-         * substitutes the previous block end statement, e.g. like in this case:
-         *
-         * #if !CONFIG_X
-         *     ...
-         * #else
-         *     ...
-         * -#endif
-         *     ...
-         * +#endif
-         */
-        String blockEndLine = diffLines[blockEndIndex];
-        char blockEndChangeType = blockEndLine.charAt(0);
-        char invertedblockEndChangeType = invertChangeType(blockEndChangeType);
-        boolean conditionIsVariabilityRelated = false;
-        boolean conditionFound = false;
-        int nestedEndifCounter = 0; // Counts the nested #endif-statements
-        int diffLinesCounter = blockEndIndex - 1;
-        String diffLine = null;
-        while (!conditionFound && diffLinesCounter >= 0) {
-            diffLine = diffLines[diffLinesCounter]; // normalize(diffLines[diffLinesCounter])
-            if (nestedEndifCounter == 0 && !Pattern.matches(CODE_IF_END_PATTERN, diffLine)
-                    && Pattern.matches(".*#if.*", diffLine)) {
-                // No nested blocks and not an #endif or #else and line indicates block start
-                conditionFound = true;
-                if (Pattern.matches(CODE_VAR_IF_START_PATTERN, diffLine)) {
-                    // Current diff line contains variability information
-                    conditionIsVariabilityRelated = true;
-                } else if (diffLine.trim().endsWith("\\")) {
-                    /*
-                     * Current diffLine contains #if-statement but does not include a CONFIG_ symbol.
-                     * If this line ends with continuation ("\"), we have to check the following lines until
-                     * there is no continuation anymore for CONFIG_ symbols.
-                     */
-                    int blockLinesCounter = diffLinesCounter + 1;
-                    String blockLine = "";
-                    do {
-                        blockLine = normalize(diffLines[blockLinesCounter], blockLinesCounter);
-                        if (Pattern.matches(CODE_VAR_PATTERN, blockLine)) {
-                            conditionIsVariabilityRelated = true;
-                        }
-                        blockLinesCounter++;
-                    } while (blockLinesCounter < blockEndIndex && blockLine.trim().endsWith("\\"));
-                }
-            } else {
-                if (!diffLine.isEmpty() && diffLine.charAt(0) != invertedblockEndChangeType
-                        && Pattern.matches(".*#endif.*", diffLine)) {
-                    // Nested block end found
-                    nestedEndifCounter++;
-                } else if (nestedEndifCounter > 0 && Pattern.matches(".*#if.*", diffLine)) {
-                    // Nested block start found
-                    nestedEndifCounter--;
-                }
-            }
-            diffLinesCounter--;
-        }
-        return conditionIsVariabilityRelated;
-    }
-    
-    /**
-     * Invert the given change type ('+' or '-').
-     * 
-     * @param changeType the character defining the change type ('+' or '-')
-     * @return if the given change type is '+' then '-'; '+' in all other cases
-     */
-    private char invertChangeType(char changeType) {
-        char invertedChangeType = '+';
-        if (changeType == '+') {
-            invertedChangeType = '-';
-        }
-        return invertedChangeType;
     }
     
 }
