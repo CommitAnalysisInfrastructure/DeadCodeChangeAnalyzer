@@ -15,6 +15,7 @@ package net.ssehub.comani.analysis.deadcodechange.diff;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import net.ssehub.comani.analysis.AnalysisResult;
 import net.ssehub.comani.data.ChangedArtifact;
 import net.ssehub.comani.data.Commit;
 

@@ -18,8 +18,8 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import net.ssehub.comani.analysis.AbstractCommitAnalyzer;
+import net.ssehub.comani.analysis.AnalysisResult;
 import net.ssehub.comani.analysis.AnalysisSetupException;
-import net.ssehub.comani.analysis.deadcodechange.diff.AnalysisResult;
 import net.ssehub.comani.analysis.deadcodechange.diff.DiffAnalyzer;
 import net.ssehub.comani.core.Logger.MessageType;
 import net.ssehub.comani.data.Commit;
@@ -162,6 +162,25 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
             }
         }
         return analysisSuccessful;
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public AnalysisResult analyze(Commit commit) {
+        AnalysisResult result = null;
+        if (commit != null) {
+            logger.log(ID, "Analyzing commit " + commit.getId(), null, MessageType.DEBUG);
+            DiffAnalyzer diffAnalyzer = new DiffAnalyzer(vmFilesRegex, codeFilesRegex, buildFilesRegex, commit);
+            if (diffAnalyzer.analyze()) {
+                result = diffAnalyzer.getResult();
+                logger.log(ID, "Analysis of commit " + commit.getId() + " successful", null, MessageType.DEBUG);
+            } else {
+                logger.log(ID, "Commit " + commit.getId() + " not analyzed", null, MessageType.DEBUG);
+            }
+        }
+        return result;
     }
     
     /**
