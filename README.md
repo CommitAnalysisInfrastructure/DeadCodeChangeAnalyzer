@@ -27,23 +27,23 @@ The regular expressions for identifying variability model, code, and build files
 Type: mandatory
 Default value: none
 Related parameters: none
-analysis.variability_change_analyzer.vm_files_regex = <Java-Regex>
+analysis.dead_code_change_analyzer.vm_files_regex = <Java-Regex>
 ```
-Example: `analysis.variability_change_analyzer.vm_files_regex = .*/Kconfig((\\.|\\-|\\_|\\+|\\~).*)?`
+Example: `analysis.dead_code_change_analyzer.vm_files_regex = .*/Kconfig((\\.|\\-|\\_|\\+|\\~).*)?`
 ```Properties
 Type: mandatory
 Default value: none
 Related parameters: none
-analysis.variability_change_analyzer.code_files_regex = <Java-Regex>
+analysis.dead_code_change_analyzer.code_files_regex = <Java-Regex>
 ```
-Example: `analysis.variability_change_analyzer.code_files_regex = .*/.*\\.[hcS]((\\.|\\-|\\_|\\+|\\~).*)?`
+Example: `analysis.dead_code_change_analyzer.code_files_regex = .*/.*\\.[hcS]((\\.|\\-|\\_|\\+|\\~).*)?`
 ```Properties
 Type: mandatory
 Default value: none
 Related parameters: none
-analysis.variability_change_analyzer.build_files_regex = <Java-Regex>
+analysis.dead_code_change_analyzer.build_files_regex = <Java-Regex>
 ```
-Example: `analysis.variability_change_analyzer.build_files_regex = .*/(Makefile|Kbuild)((\\.|\\-|\\_|\\+|\\~).*)?`
+Example: `analysis.dead_code_change_analyzer.build_files_regex = .*/(Makefile|Kbuild)((\\.|\\-|\\_|\\+|\\~).*)?`
 
 ## License
 This project is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0.html).
