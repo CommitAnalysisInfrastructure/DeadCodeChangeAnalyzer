@@ -17,9 +17,10 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import net.ssehub.comani.analysis.AbstractAnalysisResult;
 import net.ssehub.comani.analysis.AbstractCommitAnalyzer;
-import net.ssehub.comani.analysis.AnalysisResult;
 import net.ssehub.comani.analysis.AnalysisSetupException;
+import net.ssehub.comani.analysis.VerificationRelevantResult;
 import net.ssehub.comani.analysis.deadcodechange.diff.DiffAnalyzer;
 import net.ssehub.comani.core.Logger.MessageType;
 import net.ssehub.comani.data.Commit;
@@ -75,9 +76,10 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
     private String buildFilesRegex;
     
     /**
-     * The results of the analysis in terms of the commit id (key) and their specific {@link AnalysisResult}s (value).
+     * The results of the analysis in terms of the commit id (key) and their specific
+     * {@link VerificationRelevantResult}s (value).
      */
-    private HashMap<String, AnalysisResult> analysisResults;
+    private HashMap<String, VerificationRelevantResult> analysisResults;
 
     /**
      * Create a new instance of this analyzer.
@@ -109,7 +111,7 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
         buildFilesRegex = analysisProperties.getProperty(PROPERTY_BUILD_FILES_REGEX);
         checkRegex(PROPERTY_BUILD_FILES_REGEX, buildFilesRegex);
         // Second: initialize result map
-        analysisResults = new HashMap<String, AnalysisResult>();
+        analysisResults = new HashMap<String, VerificationRelevantResult>();
     }
     
     /**
@@ -153,7 +155,7 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
                 logger.log(ID, "Analyzing commit " + commit.getId(), null, MessageType.DEBUG);
                 diffAnalyzer = new DiffAnalyzer(vmFilesRegex, codeFilesRegex, buildFilesRegex, commit);
                 if (diffAnalyzer.analyze()) {
-                    analysisResults.put(diffAnalyzer.getResult().getCommitId(), diffAnalyzer.getResult());
+                    analysisResults.put(diffAnalyzer.getResult().getCommitIdentifier(), diffAnalyzer.getResult());
                     analysisSuccessful = true;
                     logger.log(ID, "Analysis of commit " + commit.getId() + " successful", null, MessageType.DEBUG);
                 } else {
@@ -168,8 +170,8 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
      * {@inheritDoc}
      */
     @Override
-    public AnalysisResult analyze(Commit commit) {
-        AnalysisResult result = null;
+    public AbstractAnalysisResult analyze(Commit commit) {
+        VerificationRelevantResult result = null;
         if (commit != null) {
             logger.log(ID, "Analyzing commit " + commit.getId(), null, MessageType.DEBUG);
             DiffAnalyzer diffAnalyzer = new DiffAnalyzer(vmFilesRegex, codeFilesRegex, buildFilesRegex, commit);
@@ -188,7 +190,7 @@ public class DeadCodeChangeAnalyzer extends AbstractCommitAnalyzer {
      * 
      * @return the {@link #analysisResults}
      */
-    public HashMap<String, AnalysisResult> getResults() {
+    public HashMap<String, VerificationRelevantResult> getResults() {
         return analysisResults;
     }
 

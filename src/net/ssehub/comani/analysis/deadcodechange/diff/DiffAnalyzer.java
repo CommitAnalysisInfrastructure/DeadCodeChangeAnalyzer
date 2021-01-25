@@ -15,7 +15,7 @@ package net.ssehub.comani.analysis.deadcodechange.diff;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import net.ssehub.comani.analysis.AnalysisResult;
+import net.ssehub.comani.analysis.VerificationRelevantResult;
 import net.ssehub.comani.data.ChangedArtifact;
 import net.ssehub.comani.data.Commit;
 
@@ -85,9 +85,9 @@ public class DiffAnalyzer {
     private Commit commit;
     
     /**
-     * The {@link AnalysisResult} of analyzing the {@link #commit}.
+     * The {@link VerificationRelevantResult} of analyzing the {@link #commit}.
      */
-    private AnalysisResult analysisResult;
+    private VerificationRelevantResult analysisResult;
     
     /**
      * Construct a new {@link DiffAnalyzer}.
@@ -114,8 +114,8 @@ public class DiffAnalyzer {
         boolean analyzedSuccessful = false;
         if (!commit.getId().isEmpty()) {
             List<ChangedArtifact> changedArtifactList = commit.getChangedArtifacts();
-            analysisResult = new AnalysisResult();
-            analysisResult.setCommitId(commit.getId());
+            analysisResult = new VerificationRelevantResult();
+            analysisResult.setCommitIdentifier(commit.getId());
             FileDiff fileDiff = null;
             for (ChangedArtifact changedArtifact : changedArtifactList) {
                 if (!changedArtifact.getArtifactPath().isEmpty() 
@@ -153,7 +153,7 @@ public class DiffAnalyzer {
      * 
      * @return the {@link #analysisResult}; may be <code>null</code>
      */
-    public AnalysisResult getResult() {
+    public VerificationRelevantResult getResult() {
         return analysisResult; 
     }
     
