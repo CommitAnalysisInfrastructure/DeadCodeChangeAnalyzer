@@ -167,28 +167,30 @@ public class VariabilityModelFileDiff extends FileDiff {
     private boolean isPartOfHelp(String diffLine, int diffLinePosition) {
         boolean isPartOfHelp = false;
         if (diffLinePosition > 0) {
-        	boolean parentElementFound = false;
-        	int diffLineIndentation = getIndentation(diffLine);
-        	if (diffLineIndentation > 0) {
-        		int diffLineCounter = diffLinePosition - 1;
-        		String previousDiffLine = null;
-        		do {
-        			previousDiffLine = normalize(diffLines[diffLineCounter], diffLineCounter);
-        			if (!previousDiffLine.isEmpty()) {
-        				int previousDiffLineIndentation = getIndentation(previousDiffLine);
-        				if (previousDiffLineIndentation < diffLineIndentation) {
-        					parentElementFound = true;
-        					previousDiffLine = previousDiffLine.trim();
-        					if (previousDiffLine.startsWith("help") 
-        							|| previousDiffLine.startsWith("--help--")
-        							|| previousDiffLine.startsWith("comment")) {
-        						isPartOfHelp = true;
-        					}
-        				}
-        			}
-        			diffLineCounter--;
-        		} while (diffLineCounter >= 0 && !parentElementFound);
-        	}        	
+            boolean parentElementFound = false;
+            int diffLineIndentation = getIndentation(diffLine);
+            if (diffLineIndentation > 0) {
+                int diffLineCounter = diffLinePosition - 1;
+                String previousDiffLine = null;
+                do {
+                    previousDiffLine = normalize(diffLines[diffLineCounter], diffLineCounter);
+                    if (!previousDiffLine.isEmpty()) {
+                        int previousDiffLineIndentation = getIndentation(previousDiffLine);
+                        if (previousDiffLineIndentation < diffLineIndentation) {
+                            parentElementFound = true;
+                            previousDiffLine = previousDiffLine.trim();
+                            // checkstyle: stop nested if depth check
+                            if (previousDiffLine.startsWith("help")
+                                    || previousDiffLine.startsWith("--help--")
+                                    || previousDiffLine.startsWith("comment")) {
+                                isPartOfHelp = true;
+                            }
+                            // checkstyle: resume nested if depth check
+                        }
+                    }
+                    diffLineCounter--;
+                } while (diffLineCounter >= 0 && !parentElementFound);
+            }
         }
         return isPartOfHelp;
     }
